@@ -51,12 +51,13 @@ Search ADS:
 
         params = {
             "q": query,
-            "fl": "author,title,bibcode,pubdate,doi",
+            "fl": "author,title,bibcode,pubdate",
             "fq": "database:astronomy",
+            "rows": "100",
         }
 
         response = requests.get(
-            "https://api.adsabs.harvard.edu/v1/search/query?sort=pubdate+desc",
+            "https://api.adsabs.harvard.edu/v1/search/query?sort=citation_count+desc",
             headers=headers,
             params=params,
         )
@@ -72,20 +73,39 @@ Search ADS:
             if len(raw_authors) > 3:
                 authors += f' and {len(raw_authors) - 3} more'
             bibcode = article['bibcode']
-            url = f"https://ui.adsabs.harvard.edu/abs/{bibcode}/abstract"
+            pdf_url = f"https://ui.adsabs.harvard.edu/link_gateway/{bibcode}/PUB_PDF"
             date = '/'.join(article["pubdate"].split('-')[:2])
-            doi = article.get('doi', [])
-            if doi:
-                doi = doi[0]
 
             output += f'<h4>{title}</h4>\n'
             output += f'<p>{authors}\n'
-            output += f'<p><a href="{url}">{bibcode}</a>\n'
-            if doi:
-                output += f'<p><a href="https://doi.org/{doi}">{doi}</a>\n'
-            output += '\n'
+            output += f'<p>{date}\n'
+            output += f'<p><a href="{pdf_url}">{bibcode}</a>\n'
+            output += f'<p><a href="/bibtex?bibcode={bibcode}">BibTex</a>\n\n'
             #f.write('<a href="">BibTeX for this abstract</a><br>\n')
 
     return Response(output, mimetype="text/html")
+
+
+@app.route('/bibtex')
+def bibtex():
+    output ='''<style>
+body {
+    font-family: monospace;
+    white-space: pre-wrap;
+}\n</style>\n'''
+    bibcode = request.args.get('bibcode')
+
+    headers = {"Authorization": f"Bearer {ads_token}"}
+
+    response = requests.post(
+        "https://api.adsabs.harvard.edu/v1/export/bibtex",
+        headers=headers,
+        data={"bibcode":[bibcode]}
+    )
+
+    output += response.json()['export']
+
+    return Response(output, mimetype="text/html")
+
 
 app.run(port=80, host='0.0.0.0')
