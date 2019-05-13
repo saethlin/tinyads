@@ -42,7 +42,7 @@ p {
 <form action="/">
 <center>
 Search ADS:
-<input type="text" name="adsquery" style="width: 40em; font:18px sans-serif;"><br>
+<input type="text" name="adsquery" autofocus style="width: 40em; font:18px sans-serif;"><br>
 </center>
 </form>\n'''
 
